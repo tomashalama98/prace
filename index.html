@@ -1,3 +1,233 @@
-<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Nabídky práce</title>
-<style>:root{--bg:#f3f6f6;--fg:#15282e}@media (prefers-color-scheme:dark){:root{--bg:#0f1a1d;--fg:#e3eef0}}body{background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center}</style>
-</head><body><p>Stránka se připravuje (test cesty ze serveru). Nabídky se tu objeví po první aktualizaci.</p></body></html>
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nabídky">
+<title>Nabídky práce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;650&display=swap">
+<style>
+:root {
+  /* Rozvržení: úzký sloupec pro telefon; nahoře stav a lepkavý pruh filtrů, pod ním kartičky po dnech */
+  --bg: #f3f6f6; --surface: #ffffff; --fg: #15282e; --muted: #5a6d72; --line: #d5e0e1;
+  --accent: #1f5566; --accent-soft: #e2eef0; --ok: #2e7d4f; --ok-soft: #e3f2e8;
+  --warn: #b5631c; --warn-soft: #fbeedd; --no: #a23b3b; --no-soft: #f8e6e6;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1a1d; --surface: #16252a; --fg: #e3eef0; --muted: #93a8ad; --line: #26393f;
+  --accent: #7cc3d6; --accent-soft: #1b3740; --ok: #6fcf97; --ok-soft: #173327;
+  --warn: #f0a868; --warn-soft: #3a2a19; --no: #f08c8c; --no-soft: #3a1d1d; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1a1d; --surface: #16252a; --fg: #e3eef0; --muted: #93a8ad; --line: #26393f;
+  --accent: #7cc3d6; --accent-soft: #1b3740; --ok: #6fcf97; --ok-soft: #173327;
+  --warn: #f0a868; --warn-soft: #3a2a19; --no: #f08c8c; --no-soft: #3a1d1d; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 17px/1.55 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 44rem; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.2rem; font-weight: 650; }
+.label { font: 500 0.72rem/1.3 var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+header { display: grid; gap: 6px; }
+header p { margin: 0; color: var(--muted); }
+.filters { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 10px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.f { flex: none; font: 600 0.9rem/1 var(--f-body); padding: 10px 14px; min-height: 40px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.f b { font: 500 0.78rem var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.f[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.f[aria-pressed="true"] b { color: var(--surface); opacity: 0.85; }
+.sync { font: 400 0.8rem var(--f-mono); color: var(--muted); }
+.day { display: grid; gap: 12px; }
+.cards { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.card[data-s="libi"] { border-color: var(--ok); box-shadow: inset 4px 0 0 var(--ok); }
+.card[data-s="nelibi"] { opacity: 0.7; }
+.card h3 { margin: 0; font: 650 1.1rem/1.3 var(--f-body); }
+.card h3 a { color: var(--fg); text-decoration: none; }
+.card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.firma { color: var(--muted); margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 0.78rem/1.2 var(--f-mono); padding: 5px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); overflow-wrap: anywhere; }
+.chip.money { background: var(--ok-soft); color: var(--ok); }
+.chip.dim { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.proc, .pozor { margin: 0; }
+.pozor { background: var(--warn-soft); border-radius: 8px; padding: 8px 10px; font-size: 0.95rem; }
+.pozor strong { color: var(--warn); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.tags { display: flex; gap: 6px; }
+.t { font: 600 0.88rem/1 var(--f-body); min-height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.t[data-v="libi"][aria-pressed="true"] { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.t[data-v="mozna"][aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.t[data-v="nelibi"][aria-pressed="true"] { background: var(--no-soft); border-color: var(--no); color: var(--no); }
+.go { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--surface);
+  background: var(--accent); padding: 0 16px; border-radius: 8px; text-decoration: none; min-height: 40px; }
+.go small { font: 400 0.75rem var(--f-mono); opacity: 0.85; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.empty { color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 20px; margin: 0; }
+@media (max-width: 420px) { h1 { font-size: 1.65rem; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.tool { font: 600 0.88rem/1 var(--f-body); min-height: 40px; padding: 0 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.hint { background: var(--accent-soft); color: var(--fg); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; }
+.hint p { margin: 0; }
+.hint[hidden] { display: none; }
+.hint .tool { justify-self: start; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><span class="label">Nejnovější nabídky ze 9. 11. 2026 · 37 nabídek za 30 dní</span>
+<h1>Nabídky práce</h1>
+<p>Označ si nabídky štítkem Líbí, Možná nebo Nelíbí a nahoře filtruj. Nelíbí se ve výchozím zobrazení schovají.
+Štítky se ukládají jen v tomhle prohlížeči, proto si je občas zazálohuj.</p>
+<div class="tools"><button class="tool" type="button" id="zaloha">Zálohovat štítky</button>
+<button class="tool" type="button" id="obnova">Obnovit štítky</button>
+<input type="file" id="soubor" accept=".json,application/json" hidden></div>
+<span class="sync" id="status" role="status" aria-live="polite"></span></header>
+<aside class="hint" id="napoveda" hidden>
+<p><strong>Tip:</strong> Klepni dole na <strong>Sdílet</strong> a pak na <strong>Přidat na plochu</strong>. Stránku pak otevřeš jako aplikaci jedním klepnutím.</p>
+<button class="tool" type="button" id="napoveda-ok">Rozumím</button></aside>
+<nav class="filters" id="filters" aria-label="Filtr podle štítku"></nav>
+<main id="list"></main>
+</div>
+<script type="application/json" id="data">{"nabidky": [{"datum": "2026-11-09", "shoda": "Nejlepší", "pozice": "Test Analytik", "firma": "ČSOB", "misto": "Praha", "ho": "neuvedeno", "mzda": "neuvedena", "web": "LinkedIn", "url": "https://cz.linkedin.com/jobs/view/test-analytik-m-%C5%BE-at-csob-4481534714"}, {"datum": "2026-11-09", "shoda": "Nejlepší", "pozice": "Tester/ka", "firma": "GK Software Czech Republic", "misto": "Plzeň", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001494462/"}, {"datum": "2026-11-09", "shoda": "Nejlepší", "pozice": "Tester/ka / Technical Writer", "firma": "Infini One", "misto": "Plzeň", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001476249/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "HR Operations Specialist", "firma": "TRASK SOLUTIONS", "misto": "Praha – Krč", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001525657/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Projektový specialista", "firma": "myTimi", "misto": "Praha – Libeň", "ho": "občas z domova", "mzda": "40 000–60 000 Kč", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001499548/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Back Office Support", "firma": "WACKER", "misto": "Plzeň", "ho": "neuvedeno", "mzda": "neuvedena", "web": "LinkedIn", "url": "https://cz.linkedin.com/jobs/view/back-office-support-at-wacker-4486598869"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Technická administrativa – zadávání zakázek do systému", "firma": "Element Materials Technology", "misto": "Plzeň – Skvrňany", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001481254/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Datový analytik/analytička", "firma": "Dotykačka", "misto": "Plzeň – Skvrňany", "ho": "občas z domova", "mzda": "30 000–50 000 Kč", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001516681/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Data & Reporting Specialist (Power BI)", "firma": "Baker Hughes", "misto": "Plzeň – Doudlevce", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001510192/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "QA Tester", "firma": "Aricoma", "misto": "Plzeň", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001515874/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Administrativní podpora mzdového týmu", "firma": "Daikin", "misto": "Plzeň – Skvrňany", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001489434/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Pracovník back office – značkové pojištění", "firma": "Modul Servis", "misto": "Plzeň – Nová Hospoda", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Prace.cz", "url": "https://www.prace.cz/nabidka/7211158a-0aa4-4260-90d0-38d6529fedd4/"}, {"datum": "2026-11-09", "shoda": "Nejlepší", "pozice": "Tester – oblast investičního bankovnictví", "firma": "CTS TRADE IT", "misto": "Praha – Krč", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001518803/"}, {"datum": "2026-11-09", "shoda": "Nejlepší", "pozice": "Junior analytik/čka dat na HPP", "firma": "ResSOLUTION Group", "misto": "Praha – Žižkov", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001498579/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Regulatory Analyst – pro absolventy/juniory", "firma": "Talentor Advanced Search", "misto": "Praha", "ho": "v inzerátu neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001499450/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Junior Data Analyst", "firma": "ASBIS CZ", "misto": "Praha – Hostivař", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001495551/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Junior Analytik pro Přenosovou soustavu", "firma": "ČEPS", "misto": "Praha – Michle", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001041810/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Koordinátor/ka administrativní podpory", "firma": "ORLEN Unipetrol RPA", "misto": "Praha – Krč", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001524656/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Analyst / Junior Consultant v týmu Evaluations", "firma": "Grant Thornton", "misto": "Praha – Nusle", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001491968/"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Expert/ka správy real estate úvěrů", "firma": "Partners Banka", "misto": "Praha – Chodov", "ho": "v inzerátu neuvedeno", "mzda": "neuvedena", "web": "Prace.cz", "url": "https://partnersholdco.jobs.cz/pd/2001500536"}, {"datum": "2026-11-09", "shoda": "Zkusit", "pozice": "Junior Valuation Analyst", "firma": "Accolade", "misto": "Praha – Karlín", "ho": "v inzerátu neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001519420/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Junior Bezpečnostní analytik pro Cyber Defense Center", "firma": "O2 Czech Republic", "misto": "Praha – Michle", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001465905/"}, {"datum": "2026-11-09", "shoda": "Na dosah", "pozice": "Securities Administrator", "firma": "Deutsche Börse Group", "misto": "Praha – Klánovice", "ho": "v inzerátu neuvedeno", "mzda": "neuvedena", "web": "LinkedIn", "url": "https://cz.linkedin.com/jobs/view/securities-administrator-f-m-d-at-deutsche-b%C3%B6rse-group-4487284572"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Test Analytik", "firma": "ČSOB", "misto": "Praha – Radlice", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001394372/"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Specialistka validace a kontroly – junior", "firma": "PPF banka", "misto": "Praha – Dejvice", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001427389/"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Specialistka administrativy investičních fondů", "firma": "TILLER investiční společnost", "misto": "Praha", "ho": "občas z domova", "mzda": "40 000 – 45 000 Kč", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001484091/"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Junior analytik provozu energetických zdrojů", "firma": "innogy", "misto": "Beroun", "ho": "není potřeba", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001318594/"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Administrativní pracovnice – back office (Pohoda)", "firma": "HMN Factory", "misto": "Hořovice (asi 17 km)", "ho": "není potřeba", "mzda": "33 000 – 45 000 Kč", "web": "Práce za rohem", "url": "https://www.pracezarohem.cz/dl/jd/PZRG-85e2a0cf-a682-47f1-9f31-07387149112d"}, {"datum": "2026-11-08", "shoda": "Nejlepší", "pozice": "Test analytik / tester (QA)", "firma": "CENDIS, s.p.", "misto": "Praha – Holešovice", "ho": "převážně z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001477224/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Tester / testerka", "firma": "Fio banka", "misto": "Praha – Nové Město", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001519459/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Back Office – Raiffeisen investiční společnost", "firma": "Raiffeisenbank", "misto": "Praha", "ho": "2 dny doma, 3 v kanceláři", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001513182/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Začínající datový analytik", "firma": "Cross Masters", "misto": "Praha – Nové Město", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001512090/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Business / IT analytik", "firma": "STAVMAT STAVEBNINY", "misto": "Rudná (asi 17 km)", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001498135/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Junior Controlling Specialist", "firma": "Rhenus Logistics", "misto": "Chrášťany (asi 18 km)", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001393839/"}, {"datum": "2026-11-08", "shoda": "Zkusit", "pozice": "Junior datová analytička", "firma": "MONETA Money Bank", "misto": "Praha – Michle", "ho": "neuvedeno", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001498703/"}, {"datum": "2026-11-08", "shoda": "Na dosah", "pozice": "IT business analytik (FinTech)", "firma": "TIPSPORT", "misto": "Beroun", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001487647/"}, {"datum": "2026-11-08", "shoda": "Na dosah", "pozice": "Datový analytik – řízení rizik", "firma": "TIPSPORT", "misto": "Beroun", "ho": "občas z domova", "mzda": "neuvedena", "web": "Jobs.cz", "url": "https://www.jobs.cz/rpd/2001484262/"}], "vychozi": {"https://www.jobs.cz/rpd/2001518803/": "nelibi", "https://www.jobs.cz/rpd/2001498579/": "nelibi", "https://www.jobs.cz/rpd/2001519420/": "nelibi", "https://www.jobs.cz/rpd/2001465905/": "nelibi", "https://www.jobs.cz/rpd/2001394372/": "nelibi", "https://www.jobs.cz/rpd/2001318594/": "nelibi", "https://www.jobs.cz/rpd/2001477224/": "nelibi", "https://www.jobs.cz/rpd/2001519459/": "nelibi", "https://www.jobs.cz/rpd/2001498135/": "nelibi", "https://www.jobs.cz/rpd/2001498703/": "nelibi", "https://www.jobs.cz/rpd/2001484262/": "nelibi", "https://cz.linkedin.com/jobs/view/securities-administrator-f-m-d-at-deutsche-b%C3%B6rse-group-4487284572": "nelibi", "https://www.pracezarohem.cz/dl/jd/PZRG-85e2a0cf-a682-47f1-9f31-07387149112d": "nelibi", "https://www.jobs.cz/rpd/2001427389/": "libi", "https://www.jobs.cz/rpd/2001484091/": "libi", "https://www.jobs.cz/rpd/2001513182/": "libi", "https://www.jobs.cz/rpd/2001393839/": "libi", "https://www.jobs.cz/rpd/2001512090/": "mozna", "https://www.jobs.cz/rpd/2001487647/": "mozna"}}</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const LS = "stitky-url-v1", LSF = "filtr-v1", LSH = "napoveda-videna-v1";
+  const MESICE = ["ledna","února","března","dubna","května","června","července","srpna","září","října","listopadu","prosince"];
+  const DNY = ["Neděle","Pondělí","Úterý","Středa","Čtvrtek","Pátek","Sobota"];
+  const NAZVY = { libi: "Líbí", mozna: "Možná", nelibi: "Nelíbí" };
+  const FILTRY = [["vse","Vše"],["nove","Neoznačené"],["libi","Líbí"],["mozna","Možná"],["nelibi","Nelíbí"]];
+  const $ = (id) => document.getElementById(id);
+  const $list = $("list"), $filters = $("filters"), $status = $("status");
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const read = (k, fallback) => { try { const v = localStorage.getItem(k); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; } };
+  const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const clean = (obj) => Object.fromEntries(Object.entries(obj || {})
+    .filter(([u, s]) => typeof u === "string" && /^https?:\/\//.test(u) && (s === "" || NAZVY[s])));
+
+  // Výchozí štítky jen při úplně prvním otevření (prázdný localStorage).
+  let labels = read(LS, null);
+  if (!labels || typeof labels !== "object") { labels = clean(DATA.vychozi); store(LS, labels); }
+  let filter = read(LSF, "vse");
+  if (!FILTRY.some(([f]) => f === filter)) filter = "vse";
+
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  const offers = DATA.nabidky;
+  const stitek = (n) => labels[n.url] || "";
+  const matches = (n, f) => { const s = stitek(n); return f === "vse" ? s !== "nelibi" : f === "nove" ? !s : s === f; };
+  const say = (text) => { $status.textContent = text; };
+
+  function card(n) {
+    const s = stitek(n);
+    const money = n.mzda && n.mzda !== "neuvedena";
+    const tags = ["libi","mozna","nelibi"].map((v) =>
+      `<button class="t" type="button" data-u="${esc(n.url)}" data-v="${v}" aria-pressed="${s === v}">${NAZVY[v]}</button>`).join("");
+    return `<article class="card" data-s="${s}">
+      <h3><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.pozice)}</a></h3>
+      <p class="firma">${esc(n.firma)}</p>
+      <div class="chips"><span class="chip">${esc(n.misto)}</span><span class="chip">${esc(n.ho)}</span>
+        <span class="chip ${money ? "money" : "dim"}">${esc(money ? n.mzda : "mzda neuvedena")}</span>
+        <span class="chip dim">shoda: ${esc(n.shoda)}</span></div>
+      <div class="row"><div class="tags" role="group" aria-label="Štítek">${tags}</div>
+        <a class="go" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">Otevřít <small>${esc(n.web)}</small></a></div>
+    </article>`;
+  }
+
+  function render() {
+    $filters.innerHTML = FILTRY.map(([f, name]) =>
+      `<button class="f" type="button" data-f="${f}" aria-pressed="${filter === f}">${name} <b>${offers.filter((n) => matches(n, f)).length}</b></button>`).join("");
+    const shown = offers.filter((n) => matches(n, filter));
+    if (!shown.length) {
+      const prazdne = { libi: "Zatím nic se štítkem Líbí. Klepni na Líbí u nabídky, která tě zaujme.",
+        mozna: "Zatím nic se štítkem Možná.", nelibi: "Zatím nic se štítkem Nelíbí.",
+        nove: "Všechno máš označené.", vse: "Žádné nabídky." };
+      $list.innerHTML = `<p class="empty">${prazdne[filter]}</p>`;
+      return;
+    }
+    const days = [...new Set(shown.map((n) => n.datum))].sort().reverse();
+    $list.innerHTML = days.map((d) => {
+      const dt = new Date(d + "T12:00:00");
+      return `<section class="day"><h2>${DNY[dt.getDay()]} ${dt.getDate()}. ${MESICE[dt.getMonth()]}</h2>
+        <div class="cards">${shown.filter((n) => n.datum === d).map(card).join("")}</div></section>`;
+    }).join("");
+  }
+
+  $filters.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-f]"); if (!b) return;
+    filter = b.dataset.f; store(LSF, filter); render();
+  });
+  $list.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-v]"); if (!b) return;
+    const url = b.dataset.u, v = b.dataset.v;
+    const next = labels[url] === v ? "" : v;
+    labels = { ...labels, [url]: next };
+    if (!store(LS, labels)) say("Štítek se nepodařilo uložit. Prohlížeč možná nedovoluje ukládání (anonymní okno?).");
+    render();
+  });
+
+  // Záloha: sdílet soubor (telefon), jinak stáhnout.
+  $("zaloha").addEventListener("click", async () => {
+    const dnes = new Date().toISOString().slice(0, 10);
+    const obsah = JSON.stringify({ typ: "stitky-nabidek", verze: 1, ulozeno: dnes, stitky: labels }, null, 1);
+    const nazev = `stitky-${dnes}.json`;
+    try {
+      const file = new File([obsah], nazev, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Záloha štítků" });
+        say("Záloha odeslána. Ulož si ji třeba do Souborů nebo do e-mailu.");
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obsah], { type: "application/json" }));
+    a.download = nazev; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    say(`Záloha stažena jako ${nazev}.`);
+  });
+
+  // Obnova: načte soubor zálohy a přepíše štítky.
+  const $soubor = $("soubor");
+  $("obnova").addEventListener("click", () => $soubor.click());
+  $soubor.addEventListener("change", async () => {
+    const f = $soubor.files && $soubor.files[0]; $soubor.value = "";
+    if (!f) return;
+    try {
+      if (f.size > 1000000) throw new Error("velký");
+      const d = JSON.parse(await f.text());
+      if (!d || d.typ !== "stitky-nabidek" || typeof d.stitky !== "object") throw new Error("formát");
+      const nove = clean(d.stitky);
+      if (!confirm(`Obnovit ${Object.keys(nove).length} štítků ze zálohy? Současné štítky se nahradí.`)) return;
+      labels = nove; store(LS, labels); render();
+      say(`Obnoveno ${Object.keys(nove).length} štítků.`);
+    } catch (e) { say("Tohle není soubor se zálohou štítků. Vyber soubor stitky-….json."); }
+  });
+
+  // Nápověda „Přidat na plochu“ jen při prvním otevření a jen mimo nainstalovanou aplikaci.
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (!standalone && !read(LSH, false)) $("napoveda").hidden = false;
+  $("napoveda-ok").addEventListener("click", () => { store(LSH, true); $("napoveda").hidden = true; });
+
+  render();
+})();
+</script>
+</body>
+</html>
